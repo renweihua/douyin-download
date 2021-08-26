@@ -1,0 +1,17 @@
+{
+    "name": "cnpscy\/douyin-download",
+    "description": "A douyin download sdk.",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "cnpscy",
+            "email": "2278757482@qq.com"
+        }
+    ],
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "Cnpscy\\DouyinDownload\\": "src"
+        }
+    }
+}
