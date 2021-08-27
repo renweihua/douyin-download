@@ -8,10 +8,12 @@
             "email": "2278757482@qq.com"
         }
     ],
-    "require": {},
+    "require": {
+        "php": ">=7.1.0"
+    },
     "autoload": {
         "psr-4": {
-            "Cnpscy\\DouyinDownload\\": "src"
+            "Cnpscy\\DouyinDownload\\": "./src/"
         }
     }
 }
