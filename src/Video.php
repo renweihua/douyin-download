@@ -78,6 +78,7 @@ class Video extends Server
                     'desc' => $item['desc'],
                     'images' => $item['images'],
                     'long_video' => $item['long_video'],
+                    'real_video_path' => '',
                 ];
 
                 // 开启下载，下载文件
@@ -90,6 +91,7 @@ class Video extends Server
                         file_put_contents($path_file_name, fopen($video['video_path'], 'r'));
                         ++$download_nums;
                     }
+                    $video['real_video_path'] = $path_file_folder;
                 }
 
                 $response_lists[] = $response;
