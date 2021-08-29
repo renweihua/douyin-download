@@ -28,10 +28,13 @@ class Video extends Server
 
             $url = $this->getVideosUrlByUid($sec_uid, $max_cursor);
 
-            $response  = json_decode($this->http->setMethod('GET')->setMaxFollow(60)->fetch($url), true);
+            $response  = json_decode($this->http->setMethod('GET')->setMaxFollow(1)->fetch($url), true);
+            if (!$response) {
+                break;
+            }
 
             // 获取作者的信息
-            if (empty($author)){
+            if ($response['aweme_list'] && empty($author)){
                 $aweme_author = current($response['aweme_list'])['author'];
                 $author = [
                     'sec_uid' => $aweme_author['sec_uid'],

@@ -302,7 +302,7 @@ class Http
      */
     public function fetch(string $url = '', bool $with_body = true, bool $with_header = false): string
     {
-        if (!$this->url){
+        if (!$this->url || $url){
             $this->url = $url;
         }
         if ('' === $this->url) {
@@ -331,6 +331,7 @@ class Http
         $curl = curl_init();
 
         //Build options
+
         $opt[CURLOPT_URL]            = $this->url;
         $opt[CURLOPT_PORT]           = &$url_unit['port'];
         $opt[CURLOPT_TIMEOUT]        = 60;
