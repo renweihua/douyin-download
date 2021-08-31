@@ -23,49 +23,40 @@ class Http
     const CONTENT_TYPE_JSON        = 'application/json; charset=UTF-8';
     const CONTENT_TYPE_FORM_DATA   = 'multipart/form-data';
     const CONTENT_TYPE_URL_ENCODED = 'application/x-www-form-urlencoded';
-
     //Job info
-    public  $data   = [];
-    public  $file   = [];
-    public  $header = [];
-
+    public $data   = [];
+    public $file   = [];
+    public $header = [];
     public $url        = '';
     public $etag       = '';
-    public  $cookie     = '';
-    public  $referer    = '';
-    public  $modified   = '';
-    public  $curl_error = '';
-
-    public  $proxy        = '';
-    public  $proxy_passwd = '';
-
-    public  $max_follow    = 0;
-    public  $response_code = 0;
-
-    public  $http_ver   = 'HTTP/2';                                               //HTTP Version
-    public  $method     = 'GET';                                                  //Request method
-    public  $user_agent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1';     //User Agent string
-
+    public $cookie     = '';
+    public $referer    = '';
+    public $modified   = '';
+    public $curl_error = '';
+    public $proxy        = '';
+    public $proxy_passwd = '';
+    public $max_follow    = 0;
+    public $response_code = 0;
+    public $http_ver   = 'HTTP/2';                                               //HTTP Version
+    public $method     = 'GET';                                                  //Request method
+    public $user_agent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1';     //User Agent string
     public $user_agent_lists = [
         'Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1',
         'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Mobile Safari/537.36 Edg/87.0.664.75',
         'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)',
-        'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.98 Safari/537.36'
+        'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.98 Safari/537.36',
     ];
-
-    public  $connection = 'keep-alive';                                           //Connection type
-
-    public  $content_type    = self::CONTENT_TYPE_URL_ENCODED;    //Content type
-    public  $accept_charset  = 'UTF-8,*;q=0';                     //Accept charset
-    public  $accept_encoding = 'gzip,deflate,identity,*;q=0';     //Accept encoding
-    public  $accept_language = 'en-US,en,zh-CN,zh,*;q=0';         //Accept language
-
-    public  $accept_type = 'application/json;q=0.9,application/xml;q=0.8,text/plain;q=0.7,text/html;q=0.6,*/*;q=0.5'; //Accept types
+    public $connection = 'keep-alive';                                           //Connection type
+    public $content_type    = self::CONTENT_TYPE_URL_ENCODED;    //Content type
+    public $accept_charset  = 'UTF-8,*;q=0';                     //Accept charset
+    public $accept_encoding = 'gzip,deflate,identity,*;q=0';     //Accept encoding
+    public $accept_language = 'en-US,en,zh-CN,zh,*;q=0';         //Accept language
+    public $accept_type = 'application/json;q=0.9,application/xml;q=0.8,text/plain;q=0.7,text/html;q=0.6,*/*;q=0.5'; //Accept types
 
     /**
      * libHttp constructor.
      *
-     * @param string $url
+     * @param  string  $url
      */
     public function __construct(string $url = '')
     {
@@ -76,11 +67,11 @@ class Http
     /**
      * Add request data
      *
-     * @param array ...$data
+     * @param  array  ...$data
      *
      * @return $this
      */
-    public function addData(array ...$data): self
+    public function addData(array ...$data) : self
     {
         foreach ($data as $item) {
             $this->data += $item;
@@ -93,14 +84,14 @@ class Http
     /**
      * Add upload file
      *
-     * @param array ...$file
+     * @param  array  ...$file
      *
      * @return $this
      */
-    public function addFile(array ...$file): self
+    public function addFile(array ...$file) : self
     {
         foreach ($file as $key => $val) {
-            if (file_exists($val)) {
+            if ( file_exists($val) ) {
                 $this->file[$key] = new \CURLFile($val);
             }
         }
@@ -112,11 +103,11 @@ class Http
     /**
      * Add header data
      *
-     * @param array $header
+     * @param  array  $header
      *
      * @return $this
      */
-    public function addHeader(array $header): self
+    public function addHeader(array $header) : self
     {
         $this->header += $header;
 
@@ -127,14 +118,14 @@ class Http
     /**
      * Add cookie data
      *
-     * @param array $cookie
+     * @param  array  $cookie
      *
      * @return $this
      */
-    public function addCookie(array $cookie): self
+    public function addCookie(array $cookie) : self
     {
         foreach ($cookie as $key => $val) {
-            if ('' !== $this->cookie) {
+            if ( '' !== $this->cookie ) {
                 $this->cookie .= '; ';
             }
 
@@ -148,11 +139,11 @@ class Http
     /**
      * Set method
      *
-     * @param string $method
+     * @param  string  $method
      *
      * @return $this
      */
-    public function setMethod(string $method = 'POST'): self
+    public function setMethod(string $method = 'POST') : self
     {
         $this->method = strtoupper($method);
 
@@ -163,11 +154,11 @@ class Http
     /**
      * Set content type
      *
-     * @param string $content_type
+     * @param  string  $content_type
      *
      * @return $this
      */
-    public function setContentType(string $content_type = self::CONTENT_TYPE_URL_ENCODED): self
+    public function setContentType(string $content_type = self::CONTENT_TYPE_URL_ENCODED) : self
     {
         $this->content_type = &$content_type;
 
@@ -178,11 +169,11 @@ class Http
     /**
      * Set referer URL
      *
-     * @param string $referer
+     * @param  string  $referer
      *
      * @return $this
      */
-    public function setReferer(string $referer): self
+    public function setReferer(string $referer) : self
     {
         $this->referer = &$referer;
 
@@ -193,11 +184,11 @@ class Http
     /**
      * Set User-Agent string
      *
-     * @param string $user_agent
+     * @param  string  $user_agent
      *
      * @return $this
      */
-    public function setUserAgent(string $user_agent): self
+    public function setUserAgent(string $user_agent) : self
     {
         $this->user_agent = &$user_agent;
 
@@ -205,7 +196,7 @@ class Http
         return $this;
     }
 
-    public function randUserAgent(): self
+    public function randUserAgent() : self
     {
         var_dump(array_rand($this->user_agent_lists));
         exit;
@@ -217,11 +208,11 @@ class Http
     /**
      * Set max follows
      *
-     * @param int $max_follow
+     * @param  int  $max_follow
      *
      * @return $this
      */
-    public function setMaxFollow(int $max_follow): self
+    public function setMaxFollow(int $max_follow) : self
     {
         $this->max_follow = &$max_follow;
 
@@ -232,11 +223,11 @@ class Http
     /**
      * Set HTTP accept types
      *
-     * @param string $accept_type
+     * @param  string  $accept_type
      *
      * @return $this
      */
-    public function setAcceptType(string $accept_type): self
+    public function setAcceptType(string $accept_type) : self
     {
         $this->accept_type = &$accept_type;
 
@@ -247,11 +238,11 @@ class Http
     /**
      * Set ETag value
      *
-     * @param string $etag
+     * @param  string  $etag
      *
      * @return $this
      */
-    public function setETag(string $etag): self
+    public function setETag(string $etag) : self
     {
         $this->etag = &$etag;
 
@@ -262,11 +253,11 @@ class Http
     /**
      * Set modified since value
      *
-     * @param string $last_modified
+     * @param  string  $last_modified
      *
      * @return $this
      */
-    public function setLastModified(string $last_modified): self
+    public function setLastModified(string $last_modified) : self
     {
         $this->modified = &$last_modified;
 
@@ -277,14 +268,14 @@ class Http
     /**
      * Set proxy
      *
-     * @param string $proxy
-     * @param string $proxy_passwd
+     * @param  string  $proxy
+     * @param  string  $proxy_passwd
      *
      * @return $this
      */
-    public function setProxy(string $proxy, string $proxy_passwd): self
+    public function setProxy(string $proxy, string $proxy_passwd) : self
     {
-        $this->proxy        = &$proxy;
+        $this->proxy = &$proxy;
         $this->proxy_passwd = &$proxy_passwd;
 
         unset($proxy, $proxy_passwd);
@@ -294,29 +285,29 @@ class Http
     /**
      * Fetch response data
      *
-     * @param bool $with_body
-     * @param bool $with_header
+     * @param  bool  $with_body
+     * @param  bool  $with_header
      *
      * @return string
      * @throws \Exception
      */
-    public function fetch(string $url = '', bool $with_body = true, bool $with_header = false): string
+    public function fetch(string $url = '', bool $with_body = true, bool $with_header = false) : string
     {
-        if (!$this->url || $url){
+        if ( !$this->url || $url ) {
             $this->url = $url;
         }
-        if ('' === $this->url) {
+        if ( '' === $this->url ) {
             throw new \Exception('URL not set!', E_USER_NOTICE);
         }
 
         //Prepare data
-        if (!empty($this->file)) {
-            $this->data         += $this->file;
+        if ( !empty($this->file) ) {
+            $this->data += $this->file;
             $this->content_type = self::CONTENT_TYPE_FORM_DATA;
         }
 
         //Set method
-        if (!empty($this->data)) {
+        if ( !empty($this->data) ) {
             $this->method = 'POST';
         }
 
@@ -327,50 +318,50 @@ class Http
         $header = $this->getHeader($url_unit);
 
         //Initialize
-        $opt  = [];
+        $opt = [];
         $curl = curl_init();
 
         //Build options
 
-        $opt[CURLOPT_URL]            = $this->url;
-        $opt[CURLOPT_PORT]           = &$url_unit['port'];
-        $opt[CURLOPT_TIMEOUT]        = 60;
-        $opt[CURLOPT_NOSIGNAL]       = true;
-        $opt[CURLOPT_AUTOREFERER]    = true;
-        $opt[CURLOPT_COOKIESESSION]  = true;
+        $opt[CURLOPT_URL] = $this->url;
+        $opt[CURLOPT_PORT] = &$url_unit['port'];
+        $opt[CURLOPT_TIMEOUT] = 60;
+        $opt[CURLOPT_NOSIGNAL] = true;
+        $opt[CURLOPT_AUTOREFERER] = true;
+        $opt[CURLOPT_COOKIESESSION] = true;
         $opt[CURLOPT_RETURNTRANSFER] = 1;
         $opt[CURLOPT_SSL_VERIFYHOST] = false;
         $opt[CURLOPT_SSL_VERIFYPEER] = false;
-        $opt[CURLOPT_HTTPHEADER]     = &$header;
-        $opt[CURLOPT_ENCODING]       = $this->accept_encoding;
-        $opt[CURLOPT_USERAGENT]      = $this->user_agent;
-        $opt[CURLOPT_CUSTOMREQUEST]  = strtoupper($this->method);
-        $opt[CURLOPT_POST]           = ('POST' === $this->method);
-        $opt[CURLOPT_NOBODY]         = !$with_body;
-        $opt[CURLOPT_HEADER]         = &$with_header;
+        $opt[CURLOPT_HTTPHEADER] = &$header;
+        $opt[CURLOPT_ENCODING] = $this->accept_encoding;
+        $opt[CURLOPT_USERAGENT] = $this->user_agent;
+        $opt[CURLOPT_CUSTOMREQUEST] = strtoupper($this->method);
+        $opt[CURLOPT_POST] = ('POST' === $this->method);
+        $opt[CURLOPT_NOBODY] = !$with_body;
+        $opt[CURLOPT_HEADER] = &$with_header;
 
-        if ('' !== $this->cookie) {
+        if ( '' !== $this->cookie ) {
             $opt[CURLOPT_COOKIE] = $this->cookie;
         }
 
-        if ('' !== $this->referer) {
+        if ( '' !== $this->referer ) {
             $opt[CURLOPT_REFERER] = $this->referer;
         }
 
-        if (0 < $this->max_follow) {
+        if ( 0 < $this->max_follow ) {
             $opt[CURLOPT_FOLLOWLOCATION] = true;
-            $opt[CURLOPT_MAXREDIRS]      = $this->max_follow;
+            $opt[CURLOPT_MAXREDIRS] = $this->max_follow;
         }
 
-        if ('' !== $this->proxy) {
+        if ( '' !== $this->proxy ) {
             $opt[CURLOPT_PROXY] = $this->proxy;
 
-            if ('' !== $this->proxy_passwd) {
+            if ( '' !== $this->proxy_passwd ) {
                 $opt[CURLOPT_PROXYUSERPWD] = $this->proxy_passwd;
             }
         }
 
-        if (!empty($this->data)) {
+        if ( !empty($this->data) ) {
             switch ($this->content_type) {
                 case self::CONTENT_TYPE_JSON:
                     $opt[CURLOPT_POSTFIELDS] = json_encode($this->data);
@@ -397,9 +388,7 @@ class Http
         $response = curl_exec($curl);
 
         //Collect HTTP CODE or ERROR
-        false !== $response
-            ? $this->response_code = curl_getinfo($curl, CURLINFO_RESPONSE_CODE)
-            : $this->curl_error = curl_error($curl);
+        false !== $response ? $this->response_code = curl_getinfo($curl, CURLINFO_RESPONSE_CODE) : $this->curl_error = curl_error($curl);
 
         //Close cURL handle
         curl_close($curl);
@@ -423,7 +412,7 @@ class Http
      *
      * @return string
      */
-    public function getLastError(): string
+    public function getLastError() : string
     {
         return $this->curl_error;
     }
@@ -431,28 +420,28 @@ class Http
     /**
      * Extract URL units
      *
-     * @param string $url
+     * @param  string  $url
      *
      * @return array
      */
-    private function getUrlUnit(string $url): array
+    private function getUrlUnit(string $url) : array
     {
         //Parse URL
         $unit = parse_url($url);
 
         //Check main components
-        if (false === $unit || !isset($unit['scheme']) || !isset($unit['host'])) {
+        if ( false === $unit || !isset($unit['scheme']) || !isset($unit['host']) ) {
             return [];
         }
 
         //Prepare URL unit
-        if (!isset($unit['path'])) {
+        if ( !isset($unit['path']) ) {
             $unit['path'] = '/';
         }
 
         $unit['query'] = isset($unit['query']) ? '?' . $unit['query'] : '';
 
-        if (!isset($unit['port'])) {
+        if ( !isset($unit['port']) ) {
             $unit['port'] = 'https' === $unit['scheme'] ? 443 : 80;
         }
 
@@ -463,38 +452,38 @@ class Http
     /**
      * get request header
      *
-     * @param array $url_unit
+     * @param  array  $url_unit
      *
      * @return array
      */
-    private function getHeader(array $url_unit): array
+    private function getHeader(array $url_unit) : array
     {
         $header_list = ['Host' => $url_unit['host'] . ':' . $url_unit['port']];
 
-        if (!empty($this->header)) {
+        if ( !empty($this->header) ) {
             $header_list += $this->header;
         }
 
-        if ('' !== $this->cookie) {
+        if ( '' !== $this->cookie ) {
             $header_list['Cookie'] = $this->cookie;
         }
 
-        if ('' !== $this->etag) {
+        if ( '' !== $this->etag ) {
             $header_list['If-None-Match'] = $this->etag;
         }
 
-        if ('' !== $this->modified) {
+        if ( '' !== $this->modified ) {
             $header_list['If-Modified-Since'] = $this->modified;
         }
 
         $header_list += [
-            'User-Agent'      => $this->user_agent,
-//            'Accept'          => $this->accept_type,
-//            'Accept-Charset'  => $this->accept_charset,
-//            'Accept-Encoding' => $this->accept_encoding,
-//            'Accept-Language' => $this->accept_language,
-//            'Content-Type'    => $this->content_type,
-//            'Connection'      => $this->connection
+            'User-Agent' => $this->user_agent,
+            //            'Accept'          => $this->accept_type,
+            //            'Accept-Charset'  => $this->accept_charset,
+            //            'Accept-Encoding' => $this->accept_encoding,
+            //            'Accept-Language' => $this->accept_language,
+            //            'Content-Type'    => $this->content_type,
+            //            'Connection'      => $this->connection
         ];
 
         $headers = [$this->method . ' ' . $url_unit['path'] . $url_unit['query'] . ' ' . $this->http_ver];
