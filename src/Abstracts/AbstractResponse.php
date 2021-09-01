@@ -5,11 +5,13 @@ namespace Cnpscy\DouyinDownload\Abstracts;
 use Cnpscy\DouyinDownload\Interfaces\InterfaceAuthor;
 use Cnpscy\DouyinDownload\Interfaces\InterfaceResponse;
 use Cnpscy\DouyinDownload\Server;
+use Cnpscy\DouyinDownload\Traits\Instance;
 use Cnpscy\DouyinDownload\Traits\TraitAuthor;
 
 abstract class AbstractResponse extends Server implements InterfaceResponse, InterfaceAuthor
 {
     use TraitAuthor;
+    use Instance;
 
     // 是否有更多数据
     protected $has_more = false;
@@ -100,7 +102,7 @@ abstract class AbstractResponse extends Server implements InterfaceResponse, Int
      */
     protected function initResponse() : void
     {
-        $this->setHasMore(false);
+        $this->setHasMore(true);
         $this->setIsMerge(false);
         $this->setMaxCursor(0);
         $this->setResult([]);
@@ -135,7 +137,7 @@ abstract class AbstractResponse extends Server implements InterfaceResponse, Int
                     'original_author' => $aweme_author,
                 ]);
             }
-            var_dump(count($response['aweme_list']));
+            // var_dump(count($response['aweme_list']));
             foreach ($response['aweme_list'] as $item) {
                 if ($item){
                     $this->setResult([
