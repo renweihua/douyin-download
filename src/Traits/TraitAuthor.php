@@ -31,7 +31,25 @@ trait TraitAuthor
 
     public function getNickname() : string
     {
-        return $this->nick_name;
+        return $this->emojiEncode($this->nick_name);
+    }
+
+    // 对emoji表情转义
+    private function emojiEncode($str){
+        $strEncode = '';
+
+        $length = mb_strlen($str,'utf-8');
+
+        for ($i=0; $i < $length; $i++) {
+            $_tmpStr = mb_substr($str,$i,1,'utf-8');
+            if(strlen($_tmpStr) >= 4){
+                $strEncode .= '[[EMOJI:'.rawurlencode($_tmpStr).']]';
+            }else{
+                $strEncode .= $_tmpStr;
+            }
+        }
+
+        return $strEncode;
     }
 
     public function getAvatar() : string

@@ -115,27 +115,39 @@ abstract class AbstractResponse extends Server implements InterfaceResponse, Int
         return $this->setFormatData($result);
     }
 
+    /**
+     * 格式化的作者资料
+     *
+     * @param $aweme_author
+     *
+     * @return array
+     */
+    public function getFormatAuthor($aweme_author): array
+    {
+        return [
+            'uid'             => $aweme_author['uid'],
+            'sec_uid'         => $aweme_author['sec_uid'],
+            'unique_id'       => empty($aweme_author['unique_id']) ? $aweme_author['uid'] : $aweme_author['unique_id'],
+            // 昵称
+            'nick_name'       => $aweme_author['nickname'],
+            // 签名
+            'signature'       => $aweme_author['signature'],
+            'follower_count'  => $aweme_author['follower_count'],
+            'total_favorited' => $aweme_author['total_favorited'],
+            // 头像
+            'avatar_thumb'    => current($aweme_author['avatar_thumb']['url_list']),
+            // 原作者数据
+            'original_author' => $aweme_author,
+        ];
+    }
+
     private function setFormatData($response)
     {
         if ( isset($response['aweme_list']) ) {
             // 获取作者的信息
             if ( $response['aweme_list'] && empty($this->getAuthor()) ) {
                 $aweme_author = current($response['aweme_list'])['author'];
-                $this->setAuthor([
-                    'uid'             => $aweme_author['uid'],
-                    'sec_uid'         => $aweme_author['sec_uid'],
-                    'unique_id'       => empty($aweme_author['unique_id']) ? $aweme_author['uid'] : $aweme_author['unique_id'],
-                    // 昵称
-                    'nick_name'       => $aweme_author['nickname'],
-                    // 签名
-                    'signature'       => $aweme_author['signature'],
-                    'follower_count'  => $aweme_author['follower_count'],
-                    'total_favorited' => $aweme_author['total_favorited'],
-                    // 头像
-                    'avatar_thumb'    => current($aweme_author['avatar_thumb']['url_list']),
-                    // 原作者数据
-                    'original_author' => $aweme_author,
-                ]);
+                $this->setAuthor($this->getFormatAuthor($aweme_author));
             }
             // var_dump(count($response['aweme_list']));
             foreach ($response['aweme_list'] as $item) {

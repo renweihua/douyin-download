@@ -10,8 +10,13 @@ class Video extends AbstractResponse
 {
     public function getUserInfoBySecUid(string $sec_uid) : array
     {
-        $this->http->randUserAgent();
-        exit;
+        $url = $this->getUserUrlBySecUid($sec_uid);
+        // 请求视频接口获取数据
+        $response = json_decode($this->http->setMethod('GET')->setMaxFollow(1)->fetch($url), true)['user_info'] ?? [];
+        if ( !$response ) {
+            return $this->setAuthor();
+        }
+        return $this->setAuthor($this->getFormatAuthor(array_merge($response, ['sec_uid' => $sec_uid])));
     }
 
     /**
