@@ -31,7 +31,7 @@ trait TraitAuthor
 
     public function getNickname() : string
     {
-        return $this->emojiEncode($this->nick_name);
+        return $this->nick_name;
     }
 
     // 对emoji表情转义
@@ -52,9 +52,9 @@ trait TraitAuthor
         return $strEncode;
     }
 
-    public function getAvatar() : string
+    public function getAvatarThumb() : string
     {
-        return $this->avatar;
+        return $this->avatar_thumb;
     }
 
     public function getSignature() : string

@@ -51,7 +51,7 @@ abstract class Server
     {
         $content = htmlspecialchars($this->http->setMaxFollow(0)->fetch($url));
         preg_match('/(?<=sec_uid=)[A-Za-z0-9-_]+/', $content, $sec_uid);
-        return current($sec_uid);
+        return current($sec_uid) ?? '';
     }
 
     abstract public function getVideosBySecUid(string $sec_uid) : array;

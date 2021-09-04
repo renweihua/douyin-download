@@ -12,7 +12,7 @@ interface InterfaceAuthor
 
     public function getNickname() : string;
 
-    public function getAvatar() : string;
+    public function getAvatarThumb() : string;
 
     public function getSignature() : string;
 
