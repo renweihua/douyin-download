@@ -4,6 +4,8 @@ declare(strict_types = 1);
 
 namespace Cnpscy\DouyinDownload;
 
+use Cnpscy\DouyinDownload\Utils\Ip;
+
 abstract class Server
 {
     const SERVER_URL = 'https://www.iesdouyin.com/web/api/v2/';
@@ -11,7 +13,11 @@ abstract class Server
 
     public function __construct()
     {
-        $this->http = new Http;
+        $http = new Http;
+        // 设置请求IP
+        $http = $http->addHeader(Ip::randHeaders());
+
+        $this->http = $http;
     }
 
     /**
