@@ -4,14 +4,15 @@ declare(strict_types = 1);
 
 namespace Cnpscy\DouyinDownload;
 
+// https://github.com/Jerry-Shaw/Nervsys/blob/8.1/Ext/libHttp.php
 class Http
 {
-    private $curlopt_cookiesession_status = true;
+    protected $has_curlopt_cookiesession = true;
 
     // 如果是swoole，关闭此标识即可
-    public function setCurloptCookiesessionStatus($status)
+    public function hasCurloptCookiesession($status = true)
     {
-        $this->curlopt_cookiesession_status = $status;
+        $this->has_curlopt_cookiesession = $status;
         return $this;
     }
 
@@ -23,17 +24,17 @@ class Http
 
     //cURL default data container
     const CURL_DEFAULT = [
-        'http_ver'          => 'HTTP/1.1',
+        'http_ver'          => 'HTTP/2',
         'http_method'       => 'GET',
         'http_connection'   => 'keep-alive',
         'http_content_type' => self::CONTENT_TYPE_URL_ENCODED,
         'ssl_verifyhost'    => 2,
         'ssl_verifypeer'    => false,
         'accept_charset'    => 'UTF-8,*;q=0',
-        'accept_encoding'   => 'gzip,deflate,identity,*;q=0',
-        'accept_language'   => 'en-US,en,zh-CN,zh,*;q=0',
+        'accept_encoding'   => 'gzip, deflate, identity,*;q=0',
+        'accept_language'   => 'zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7',
         'accept_type'       => 'application/json;q=0.9,application/xml;q=0.8,text/plain;q=0.7,text/html;q=0.6,*/*;q=0.5',
-        'user_agent'        => 'Mozilla/5.0 (Compatible; NervSys/)',
+        'user_agent'        => 'Mozilla/5.0 (Compatible; Nervsys/)',
         'with_body'         => true,
         'timeout'           => 60
     ];
@@ -52,6 +53,8 @@ class Http
     public string $curl_error = '';
 
     //Runtime data container
+    public array $rem_options  = [];
+    public array $cURL_options = [];
     public array $runtime_data = [];
 
     /**
@@ -132,16 +135,30 @@ class Http
     /**
      * Add custom cURL options
      *
-     * @param array $curl_opt
+     * @param array $curl_opt_pair
      *
      * @return $this
      */
-    public function addOptions(array $curl_opt): self
+    public function addOptions(array $curl_opt_pair): self
     {
-        $this->runtime_data['options'] ??= [];
-        $this->runtime_data['options'] += $curl_opt;
+        $this->cURL_options += $curl_opt_pair;
 
-        unset($curl_opt);
+        unset($curl_opt_pair);
+        return $this;
+    }
+
+    /**
+     * Remove cURL options
+     *
+     * @param int ...$curl_opts
+     *
+     * @return $this
+     */
+    public function remOptions(int ...$curl_opts): self
+    {
+        $this->rem_options = &$curl_opts;
+
+        unset($curl_opts);
         return $this;
     }
 
@@ -364,6 +381,7 @@ class Http
      * @param string $to_file
      *
      * @return string
+     * @throws \ReflectionException
      */
     public function fetch(string $url, string $to_file = ''): string
     {
@@ -495,6 +513,33 @@ class Http
     }
 
     /**
+     * Parse HTTP Cookie string
+     *
+     * @param string $cookie
+     *
+     * @return array
+     */
+    public function parseRawCookie(string $cookie): array
+    {
+        $cookie_data = [];
+        $cookie_list = str_contains($cookie, '; ') ? explode('; ', $cookie) : [$cookie];
+
+        foreach ($cookie_list as $value) {
+            if (false === ($pos = strpos($value, '='))) {
+                continue;
+            }
+
+            $key = substr($value, 0, $pos);
+            $val = substr($value, $pos + 1);
+
+            $cookie_data[$key] = $val;
+        }
+
+        unset($cookie, $cookie_list, $value, $pos, $key, $val);
+        return $cookie_data;
+    }
+
+    /**
      * Build URL units
      *
      * @param string $url
@@ -565,10 +610,19 @@ class Http
      * @param bool  $with_header
      *
      * @return array
+     * @throws \ReflectionException
      */
     private function buildCurlOptions(array $runtime_data, bool $with_header = true): array
     {
-        $curl_opt = $this->runtime_data['options'] ?? [];
+        $curl_opt = $this->cURL_options;
+
+        $curl_opt += [CURLOPT_NOSIGNAL => true];
+        $curl_opt += [CURLOPT_AUTOREFERER => true];
+        if ($this->has_curlopt_cookiesession) {
+            $curl_opt += [CURLOPT_COOKIESESSION => true];
+        }
+        $curl_opt += [CURLOPT_RETURNTRANSFER => true];
+        $curl_opt += [CURLOPT_FOLLOWLOCATION => false];
 
         if (isset($runtime_data['cookie'])) {
             $curl_opt[CURLOPT_COOKIE] = &$runtime_data['cookie'];
@@ -599,20 +653,13 @@ class Http
             if (false !== stripos($runtime_data['http_content_type'], 'urlencoded')) {
                 $curl_opt[CURLOPT_POSTFIELDS] = http_build_query($runtime_data['data']);
             } elseif (false !== stripos($runtime_data['http_content_type'], 'json')) {
-                $curl_opt[CURLOPT_POSTFIELDS] = json_encode($runtime_data['data'], JSON_FORMAT);
+                $curl_opt[CURLOPT_POSTFIELDS] = json_encode($runtime_data['data']);
             } elseif (false !== stripos($runtime_data['http_content_type'], 'xml')) {
-                $curl_opt[CURLOPT_POSTFIELDS] = IOUnit::new()->toXml($runtime_data['data']);
+                // $curl_opt[CURLOPT_POSTFIELDS] = IOData::new()->toXml($runtime_data['data']);
             } else {
                 $curl_opt[CURLOPT_POSTFIELDS] = &$runtime_data['data'];
             }
         }
-
-        $curl_opt[CURLOPT_NOSIGNAL]       = true;
-        $curl_opt[CURLOPT_AUTOREFERER]    = true;
-        if ($this->curlopt_cookiesession_status) {
-            $curl_opt[CURLOPT_COOKIESESSION]  = true;
-        }
-        $curl_opt[CURLOPT_RETURNTRANSFER] = true;
 
         $curl_opt[CURLOPT_NOBODY] = !$runtime_data['with_body'];
 
@@ -627,6 +674,14 @@ class Http
         $curl_opt[CURLOPT_CUSTOMREQUEST]  = &$runtime_data['http_method'];
         $curl_opt[CURLOPT_SSL_VERIFYHOST] = &$runtime_data['ssl_verifyhost'];
         $curl_opt[CURLOPT_SSL_VERIFYPEER] = &$runtime_data['ssl_verifypeer'];
+
+        //Remove specific cURL options
+        if (!empty($this->rem_options)) {
+            $curl_opt = array_diff_key($curl_opt, array_flip($this->rem_options));
+        }
+
+        //Reset cURL options property
+        $this->cURL_options = [];
 
         unset($runtime_data, $with_header);
         return $curl_opt;
@@ -709,29 +764,30 @@ class Http
 
             $this->http_header[$key] = $val;
 
+            //Parse Cookie
             if ('set-cookie' === $key) {
                 if ('' !== $this->raw_cookie) {
                     $this->raw_cookie .= '; ';
                 }
 
+                $val_pos = strpos($val, '; ');
+
+                if (false !== $val_pos) {
+                    $val = substr($val, 0, $val_pos);
+                }
+
                 $this->raw_cookie .= rtrim($val, ';');
+
+                $kv_pos = strpos($val, '=');
+
+                if (false === ($kv_pos)) {
+                    continue;
+                }
+
+                $this->http_cookie[substr($val, 0, $kv_pos)] = substr($val, $kv_pos + 1);
             }
         }
 
-        //Parse Cookie
-        $data_list = explode('; ', $this->raw_cookie);
-
-        foreach ($data_list as $value) {
-            if (false === ($pos = strpos($value, '='))) {
-                continue;
-            }
-
-            $key = substr($value, 0, $pos);
-            $val = substr($value, $pos + 1);
-
-            $this->http_cookie[$key] = $val;
-        }
-
-        unset($response, $data_list, $value, $pos, $key, $val);
+        unset($response, $data_list, $value, $pos, $key, $val, $val_pos, $kv_pos);
     }
 }
