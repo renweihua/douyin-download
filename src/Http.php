@@ -7,15 +7,6 @@ namespace Cnpscy\DouyinDownload;
 // https://github.com/Jerry-Shaw/Nervsys/blob/8.1/Ext/libHttp.php
 class Http
 {
-    protected $has_curlopt_cookiesession = true;
-
-    // 如果是swoole，关闭此标识即可
-    public function hasCurloptCookiesession($status = true)
-    {
-        $this->has_curlopt_cookiesession = $status;
-        return $this;
-    }
-
     //Pre-defined content types
     const CONTENT_TYPE_XML         = 'application/xml;charset=utf-8';
     const CONTENT_TYPE_JSON        = 'application/json;charset=utf-8';
@@ -618,9 +609,7 @@ class Http
 
         $curl_opt += [CURLOPT_NOSIGNAL => true];
         $curl_opt += [CURLOPT_AUTOREFERER => true];
-        if ($this->has_curlopt_cookiesession) {
-            $curl_opt += [CURLOPT_COOKIESESSION => true];
-        }
+        $curl_opt += [CURLOPT_COOKIESESSION => true];
         $curl_opt += [CURLOPT_RETURNTRANSFER => true];
         $curl_opt += [CURLOPT_FOLLOWLOCATION => false];
 
