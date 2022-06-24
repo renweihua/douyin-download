@@ -19,6 +19,16 @@ abstract class Server
 
         $this->http = $http;
     }
+    
+    public function getHttp()
+    {
+        return $this->http;
+    }
+    
+    public function setHttp($http): void
+    {
+        $this->http = $http;
+    }
 
     /**
      * 获取会员详情的API的URL
