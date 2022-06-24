@@ -12,7 +12,7 @@ class Video extends AbstractResponse
     {
         $url = $this->getUserUrlBySecUid($sec_uid);
         // 请求视频接口获取数据
-        $response = json_decode($this->http->setMethod('GET')->setMaxFollow(1)->fetch($url), true)['user_info'] ?? [];
+        $response = json_decode($this->http->setHttpMethod('GET')->setMaxFollow(1)->fetch($url), true)['user_info'] ?? [];
         if ( !$response ) {
             return $this->setAuthor();
         }
@@ -43,7 +43,7 @@ class Video extends AbstractResponse
         $url = $this->getVideosUrlBySecUid($sec_uid, $max_cursor);
         $this->sec_uid = $sec_uid;
         // 请求视频接口获取数据
-        $response = json_decode($this->http->setMethod('GET')->setMaxFollow(1)->fetch($url), true);
+        $response = json_decode($this->http->setHttpMethod('GET')->setMaxFollow(1)->fetch($url), true);
         if ( !$response ) {
             return $this->setResponse();
         }
