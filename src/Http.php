@@ -6,132 +6,123 @@ namespace Cnpscy\DouyinDownload;
 
 class Http
 {
-    public function demo()
-    {
-        $url = '';
-        $http = new Http($url);
-        $http->setUserAgent('Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Mobile Safari/537.36 Edg/87.0.664.75');
+    private $curlopt_cookiesession_status = true;
 
-        $content = $http->fetch();
-        // var_dump($content);
-        // var_dump($http->getHttpCode());
-        // var_dump($http->getLastError());
+    // 如果是swoole，关闭此标识即可
+    public function setCurloptCookiesessionStatus($status)
+    {
+        $this->curlopt_cookiesession_status = $status;
+        return $this;
     }
 
     //Pre-defined content types
-    const CONTENT_TYPE_XML         = 'application/xml; charset=UTF-8';
-    const CONTENT_TYPE_JSON        = 'application/json; charset=UTF-8';
+    const CONTENT_TYPE_XML         = 'application/xml;charset=utf-8';
+    const CONTENT_TYPE_JSON        = 'application/json;charset=utf-8';
     const CONTENT_TYPE_FORM_DATA   = 'multipart/form-data';
-    const CONTENT_TYPE_URL_ENCODED = 'application/x-www-form-urlencoded';
-    //Job info
-    public $data   = [];
-    public $file   = [];
-    public $header = [];
-    public $url        = '';
-    public $etag       = '';
-    public $cookie     = '';
-    public $referer    = '';
-    public $modified   = '';
-    public $curl_error = '';
-    public $proxy        = '';
-    public $proxy_passwd = '';
-    public $max_follow    = 0;
-    public $response_code = 0;
-    public $http_ver   = 'HTTP/2';                                               //HTTP Version
-    public $method     = 'GET';                                                  //Request method
-    public $user_agent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1';     //User Agent string
-    // Mozilla/5.0 (iPhone; CPU iPhone OS 12_1_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/16D57 Version/12.0 Safari/604.1
-    
-    public $user_agent_lists = [
-        'Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1',
-        'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Mobile Safari/537.36 Edg/87.0.664.75',
-        'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)',
-        'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.98 Safari/537.36',
-    ];
-    public $connection = 'keep-alive';                                           //Connection type
-    public $content_type    = self::CONTENT_TYPE_URL_ENCODED;    //Content type
-    public $accept_charset  = 'UTF-8,*;q=0';                     //Accept charset
-    public $accept_encoding = 'gzip,deflate,identity,*;q=0';     //Accept encoding
-    public $accept_language = 'en-US,en,zh-CN,zh,*;q=0';         //Accept language
-    public $accept_type = 'application/json;q=0.9,application/xml;q=0.8,text/plain;q=0.7,text/html;q=0.6,*/*;q=0.5'; //Accept types
+    const CONTENT_TYPE_URL_ENCODED = 'application/x-www-form-urlencoded;charset=utf-8';
 
-    /**
-     * libHttp constructor.
-     *
-     * @param  string  $url
-     */
-    public function __construct(string $url = '')
-    {
-        $this->url = &$url;
-        unset($url);
-    }
+    //cURL default data container
+    const CURL_DEFAULT = [
+        'http_ver'          => 'HTTP/1.1',
+        'http_method'       => 'GET',
+        'http_connection'   => 'keep-alive',
+        'http_content_type' => self::CONTENT_TYPE_URL_ENCODED,
+        'ssl_verifyhost'    => 2,
+        'ssl_verifypeer'    => false,
+        'accept_charset'    => 'UTF-8,*;q=0',
+        'accept_encoding'   => 'gzip,deflate,identity,*;q=0',
+        'accept_language'   => 'en-US,en,zh-CN,zh,*;q=0',
+        'accept_type'       => 'application/json;q=0.9,application/xml;q=0.8,text/plain;q=0.7,text/html;q=0.6,*/*;q=0.5',
+        'user_agent'        => 'Mozilla/5.0 (Compatible; NervSys/)',
+        'with_body'         => true,
+        'timeout'           => 60
+    ];
+
+    //Raw data
+    public string $raw_header = '';
+    public string $raw_cookie = '';
+
+    //parsed data
+    public string $http_body   = '';
+    public array  $http_header = [];
+    public array  $http_cookie = [];
+
+    //cURL info data
+    public array  $curl_info  = [];
+    public string $curl_error = '';
+
+    //Runtime data container
+    public array $runtime_data = [];
 
     /**
      * Add request data
      *
-     * @param  array  ...$data
+     * @param array $data
      *
      * @return $this
      */
-    public function addData(array ...$data) : self
+    public function addData(array $data): self
     {
-        foreach ($data as $item) {
-            $this->data += $item;
-        }
+        $this->runtime_data['data'] ??= [];
+        $this->runtime_data['data'] += $data;
 
-        unset($data, $item);
+        unset($data);
         return $this;
     }
 
     /**
-     * Add upload file
+     * Add request header
      *
-     * @param  array  ...$file
-     *
-     * @return $this
-     */
-    public function addFile(array ...$file) : self
-    {
-        foreach ($file as $key => $val) {
-            if ( file_exists($val) ) {
-                $this->file[$key] = new \CURLFile($val);
-            }
-        }
-
-        unset($file, $key, $val);
-        return $this;
-    }
-
-    /**
-     * Add header data
-     *
-     * @param  array  $header
+     * @param array $header
      *
      * @return $this
      */
-    public function addHeader(array $header) : self
+    public function addHeader(array $header): self
     {
-        $this->header += $header;
+        $this->runtime_data['header'] ??= [];
+        $this->runtime_data['header'] += $header;
 
         unset($header);
         return $this;
     }
 
     /**
-     * Add cookie data
+     * Add upload file
      *
-     * @param  array  $cookie
+     * @param string $key
+     * @param string $filename
+     * @param string $mime_type
+     * @param string $posted_filename
      *
      * @return $this
      */
-    public function addCookie(array $cookie) : self
+    public function addFile(string $key, string $filename, string $mime_type = '', string $posted_filename = ''): self
     {
+        if (is_file($filename)) {
+            $this->runtime_data['file'][$key] = curl_file_create($filename, $mime_type, $posted_filename);
+        }
+
+        unset($key, $filename, $mime_type, $posted_filename);
+        return $this;
+    }
+
+    /**
+     * Add cookie data
+     *
+     * @param array $cookie
+     *
+     * @return $this
+     */
+    public function addCookie(array $cookie): self
+    {
+        $this->runtime_data['cookie'] ??= '';
+
         foreach ($cookie as $key => $val) {
-            if ( '' !== $this->cookie ) {
-                $this->cookie .= '; ';
+            if ('' !== $this->runtime_data['cookie']) {
+                $this->runtime_data['cookie'] .= '; ';
             }
 
-            $this->cookie .= $key . '=' . $val;
+            $this->runtime_data['cookie'] .= $key . '=' . $val;
         }
 
         unset($cookie, $key, $val);
@@ -139,45 +130,91 @@ class Http
     }
 
     /**
-     * Set method
+     * Add custom cURL options
      *
-     * @param  string  $method
+     * @param array $curl_opt
      *
      * @return $this
      */
-    public function setMethod(string $method = 'POST') : self
+    public function addOptions(array $curl_opt): self
     {
-        $this->method = strtoupper($method);
+        $this->runtime_data['options'] ??= [];
+        $this->runtime_data['options'] += $curl_opt;
 
-        unset($method);
+        unset($curl_opt);
+        return $this;
+    }
+
+    /**
+     * Set HTTP method
+     *
+     * @param string $http_method
+     *
+     * @return $this
+     */
+    public function setHttpMethod(string $http_method): self
+    {
+        $this->runtime_data['http_method'] = &$http_method;
+
+        unset($http_method);
         return $this;
     }
 
     /**
      * Set content type
      *
-     * @param  string  $content_type
+     * @param string $content_type
      *
      * @return $this
      */
-    public function setContentType(string $content_type = self::CONTENT_TYPE_URL_ENCODED) : self
+    public function setContentType(string $content_type): self
     {
-        $this->content_type = &$content_type;
+        $this->runtime_data['http_content_type'] = &$content_type;
 
         unset($content_type);
         return $this;
     }
 
     /**
-     * Set referer URL
+     * Set Accept Encoding
      *
-     * @param  string  $referer
+     * @param string $accept_encoding
      *
      * @return $this
      */
-    public function setReferer(string $referer) : self
+    public function setAcceptEncoding(string $accept_encoding): self
     {
-        $this->referer = &$referer;
+        $this->runtime_data['accept_encoding'] = &$accept_encoding;
+
+        unset($accept_encoding);
+        return $this;
+    }
+
+    /**
+     * Set cURL timeout value (seconds)
+     *
+     * @param int $timeout
+     *
+     * @return $this
+     */
+    public function setTimeout(int $timeout): self
+    {
+        $this->runtime_data['timeout'] = &$timeout;
+
+        unset($timeout);
+        return $this;
+    }
+
+    /**
+     * Set referer URL
+     *
+     * @param string $referer
+     *
+     * @return $this
+     */
+    public function setReferer(string $referer): self
+    {
+        $this->runtime_data['referer'] = &$referer;
 
         unset($referer);
         return $this;
@@ -186,37 +223,28 @@ class Http
     /**
      * Set User-Agent string
      *
-     * @param  string  $user_agent
+     * @param string $user_agent
      *
      * @return $this
      */
-    public function setUserAgent(string $user_agent) : self
+    public function setUserAgent(string $user_agent): self
     {
-        $this->user_agent = &$user_agent;
+        $this->runtime_data['user_agent'] = &$user_agent;
 
         unset($user_agent);
         return $this;
     }
 
-    public function randUserAgent() : self
-    {
-        var_dump(array_rand($this->user_agent_lists));
-        exit;
-        $this->user_agent = array_rand($this->user_agent_lists);
-
-        return $this;
-    }
-
     /**
-     * Set max follows
+     * Set max follow depths
      *
-     * @param  int  $max_follow
+     * @param int $max_follow
      *
      * @return $this
      */
-    public function setMaxFollow(int $max_follow) : self
+    public function setMaxFollow(int $max_follow): self
     {
-        $this->max_follow = &$max_follow;
+        $this->runtime_data['max_follow'] = &$max_follow;
 
         unset($max_follow);
         return $this;
@@ -225,13 +253,13 @@ class Http
     /**
      * Set HTTP accept types
      *
-     * @param  string  $accept_type
+     * @param string $accept_type
      *
      * @return $this
      */
-    public function setAcceptType(string $accept_type) : self
+    public function setAcceptType(string $accept_type): self
     {
-        $this->accept_type = &$accept_type;
+        $this->runtime_data['accept_type'] = &$accept_type;
 
         unset($accept_type);
         return $this;
@@ -240,13 +268,13 @@ class Http
     /**
      * Set ETag value
      *
-     * @param  string  $etag
+     * @param string $etag
      *
      * @return $this
      */
-    public function setETag(string $etag) : self
+    public function setETag(string $etag): self
     {
-        $this->etag = &$etag;
+        $this->runtime_data['etag'] = &$etag;
 
         unset($etag);
         return $this;
@@ -255,246 +283,455 @@ class Http
     /**
      * Set modified since value
      *
-     * @param  string  $last_modified
+     * @param string $last_modified
      *
      * @return $this
      */
-    public function setLastModified(string $last_modified) : self
+    public function setLastModified(string $last_modified): self
     {
-        $this->modified = &$last_modified;
+        $this->runtime_data['last_modified'] = &$last_modified;
 
         unset($last_modified);
         return $this;
     }
 
     /**
-     * Set proxy
+     * Set ssl_verifyhost value
      *
-     * @param  string  $proxy
-     * @param  string  $proxy_passwd
+     * @param int $ssl_verifyhost
      *
      * @return $this
      */
-    public function setProxy(string $proxy, string $proxy_passwd) : self
+    public function setSslVerifyHost(int $ssl_verifyhost): self
     {
-        $this->proxy = &$proxy;
-        $this->proxy_passwd = &$proxy_passwd;
+        $this->runtime_data['ssl_verifyhost'] = &$ssl_verifyhost;
+
+        unset($ssl_verifyhost);
+        return $this;
+    }
+
+    /**
+     * Set ssl_verifypeer value
+     *
+     * @param bool $ssl_verifypeer
+     *
+     * @return $this
+     */
+    public function setSslVerifyPeer(bool $ssl_verifypeer): self
+    {
+        $this->runtime_data['ssl_verifypeer'] = &$ssl_verifypeer;
+
+        unset($ssl_verifypeer);
+        return $this;
+    }
+
+    /**
+     * Set proxy
+     *
+     * @param string $proxy
+     * @param string $proxy_passwd
+     *
+     * @return $this
+     */
+    public function setProxy(string $proxy, string $proxy_passwd): self
+    {
+        $this->runtime_data['proxy']        = &$proxy;
+        $this->runtime_data['proxy_passwd'] = &$proxy_passwd;
 
         unset($proxy, $proxy_passwd);
         return $this;
     }
 
     /**
-     * Fetch response data
+     * Fetch with body content
      *
-     * @param  bool  $with_body
-     * @param  bool  $with_header
+     * @param bool $with_body
+     *
+     * @return $this
+     */
+    public function withBody(bool $with_body): self
+    {
+        $this->runtime_data['with_body'] = &$with_body;
+
+        unset($with_body);
+        return $this;
+    }
+
+    /**
+     * Fetch response body from URL (return or save)
+     *
+     * @param string $url
+     * @param string $to_file
      *
      * @return string
-     * @throws \Exception
      */
-    public function fetch(string $url = '', bool $with_body = true, bool $with_header = false) : string
+    public function fetch(string $url, string $to_file = ''): string
     {
-        if ( !$this->url || $url ) {
-            $this->url = $url;
-        }
-        if ( '' === $this->url ) {
-            throw new \Exception('URL not set!', E_USER_NOTICE);
-        }
-
-        //Prepare data
-        if ( !empty($this->file) ) {
-            $this->data += $this->file;
-            $this->content_type = self::CONTENT_TYPE_FORM_DATA;
-        }
-
-        //Set method
-        if ( !empty($this->data) ) {
-            $this->method = 'POST';
-        }
-
         //Get URL units
-        $url_unit = $this->getUrlUnit($this->url);
+        $url_unit = $this->buildUrlUnit($url);
 
-        //Get cURL headers
-        $header = $this->getHeader($url_unit);
+        //Build runtime data
+        $runtime_data = $this->buildRuntimeData($url_unit);
 
-        //Initialize
-        $opt = [];
-        $curl = curl_init();
+        //Build cURL options
+        $curl_options = $this->buildCurlOptions($runtime_data, '' === $to_file);
 
-        //Build options
+        //Initial cURL
+        $curl_handle = curl_init($url);
 
-        $opt[CURLOPT_URL] = $this->url;
-        $opt[CURLOPT_PORT] = &$url_unit['port'];
-        $opt[CURLOPT_TIMEOUT] = 60;
-        $opt[CURLOPT_NOSIGNAL] = true;
-        $opt[CURLOPT_AUTOREFERER] = true;
-        $opt[CURLOPT_COOKIESESSION] = true;
-        $opt[CURLOPT_RETURNTRANSFER] = 1;
-        $opt[CURLOPT_SSL_VERIFYHOST] = false;
-        $opt[CURLOPT_SSL_VERIFYPEER] = false;
-        $opt[CURLOPT_HTTPHEADER] = &$header;
-        $opt[CURLOPT_ENCODING] = $this->accept_encoding;
-        $opt[CURLOPT_USERAGENT] = $this->user_agent;
-        $opt[CURLOPT_CUSTOMREQUEST] = strtoupper($this->method);
-        $opt[CURLOPT_POST] = ('POST' === $this->method);
-        $opt[CURLOPT_NOBODY] = !$with_body;
-        $opt[CURLOPT_HEADER] = &$with_header;
-
-        if ( '' !== $this->cookie ) {
-            $opt[CURLOPT_COOKIE] = $this->cookie;
-        }
-
-        if ( '' !== $this->referer ) {
-            $opt[CURLOPT_REFERER] = $this->referer;
-        }
-
-        if ( 0 < $this->max_follow ) {
-            $opt[CURLOPT_FOLLOWLOCATION] = true;
-            $opt[CURLOPT_MAXREDIRS] = $this->max_follow;
-        }
-
-        if ( '' !== $this->proxy ) {
-            $opt[CURLOPT_PROXY] = $this->proxy;
-
-            if ( '' !== $this->proxy_passwd ) {
-                $opt[CURLOPT_PROXYUSERPWD] = $this->proxy_passwd;
-            }
-        }
-
-        if ( !empty($this->data) ) {
-            switch ($this->content_type) {
-                case self::CONTENT_TYPE_JSON:
-                    $opt[CURLOPT_POSTFIELDS] = json_encode($this->data);
-                    break;
-
-                case self::CONTENT_TYPE_XML:
-                    $opt[CURLOPT_POSTFIELDS] = IOUnit::new()->toXml($this->data);
-                    break;
-
-                case self::CONTENT_TYPE_URL_ENCODED:
-                    $opt[CURLOPT_POSTFIELDS] = http_build_query($this->data);
-                    break;
-
-                default:
-                    $opt[CURLOPT_POSTFIELDS] = &$this->data;
-                    break;
-            }
+        //Save to file
+        if ('' !== $to_file) {
+            $file_handle                = fopen($to_file, 'wb');
+            $curl_options[CURLOPT_FILE] = &$file_handle;
         }
 
         //Set cURL options
-        curl_setopt_array($curl, $opt);
+        curl_setopt_array($curl_handle, $curl_options);
 
-        //Get response
-        $response = curl_exec($curl);
+        //Get raw response, return bool when save to file
+        $response = curl_exec($curl_handle);
 
-        //Collect HTTP CODE or ERROR
-        false !== $response ? $this->response_code = curl_getinfo($curl, CURLINFO_RESPONSE_CODE) : $this->curl_error = curl_error($curl);
+        //Get cURL info
+        $this->curl_info  = curl_getinfo($curl_handle);
+        $this->curl_error = curl_error($curl_handle);
 
-        //Close cURL handle
-        curl_close($curl);
+        //Close cURL handling
+        curl_close($curl_handle);
 
-        unset($opt, $curl, $key, $val);
-        return (string)$response;
+        //Close file handling
+        if ('' !== $to_file) {
+            fflush($file_handle);
+            fclose($file_handle);
+            unset($file_handle);
+        }
+
+        //Parse HTTP response
+        if (is_string($response)) {
+            $this->parseHttpResponse($response);
+        }
+
+        unset($url, $url_unit, $runtime_data, $curl_options, $curl_handle, $response);
+        return '' === $to_file ? $this->http_body : $to_file;
     }
 
     /**
-     * Get last HTTP response code
+     * Get HTTP response code
      *
-     * @return string
+     * @return int
      */
-    public function getHttpCode()
+    public function getHttpCode(): int
     {
-        return $this->response_code;
+        return $this->curl_info['http_code'];
     }
 
     /**
-     * Get last HTTP curl error
+     * Get HTTP download size
+     *
+     * @return float
+     */
+    public function getDownSize(): float
+    {
+        return $this->curl_info['size_download'];
+    }
+
+    /**
+     * Get HTTP body size
+     *
+     * @return float
+     */
+    public function getBodySize(): float
+    {
+        return $this->curl_info['download_content_length'];
+    }
+
+    /**
+     * Get HTTP total transfer time (second)
+     *
+     * @return float
+     */
+    public function getTotalTime(): float
+    {
+        return $this->curl_info['total_time'];
+    }
+
+    /**
+     * Get HTTP body data
      *
      * @return string
      */
-    public function getLastError() : string
+    public function getHttpBody(): string
+    {
+        return $this->http_body;
+    }
+
+    /**
+     * Get HTTP cURL error
+     *
+     * @return string
+     */
+    public function getHttpError(): string
     {
         return $this->curl_error;
     }
 
     /**
-     * Extract URL units
-     *
-     * @param  string  $url
+     * Get parsed HTTP Header data
      *
      * @return array
      */
-    private function getUrlUnit(string $url) : array
+    public function getHttpHeader(): array
+    {
+        return $this->http_header;
+    }
+
+    /**
+     * Get parsed HTTP Cookie data
+     *
+     * @return array
+     */
+    public function getHttpCookie(): array
+    {
+        return $this->http_cookie;
+    }
+
+    /**
+     * Build URL units
+     *
+     * @param string $url
+     *
+     * @return array
+     */
+    private function buildUrlUnit(string $url): array
     {
         //Parse URL
-        $unit = parse_url($url);
+        $url_unit = parse_url($url);
 
         //Check main components
-        if ( false === $unit || !isset($unit['scheme']) || !isset($unit['host']) ) {
+        if (false === $url_unit || !isset($url_unit['scheme']) || !isset($url_unit['host'])) {
             return [];
         }
 
         //Prepare URL unit
-        if ( !isset($unit['path']) ) {
-            $unit['path'] = '/';
+        if (!isset($url_unit['path'])) {
+            $url_unit['path'] = '/';
         }
 
-        $unit['query'] = isset($unit['query']) ? '?' . $unit['query'] : '';
-
-        if ( !isset($unit['port']) ) {
-            $unit['port'] = 'https' === $unit['scheme'] ? 443 : 80;
-        }
+        //Build query string
+        $url_unit['query'] = isset($url_unit['query']) ? '?' . $url_unit['query'] : '';
 
         unset($url);
-        return $unit;
+        return $url_unit;
     }
 
     /**
-     * get request header
+     * Build runtime data
      *
-     * @param  array  $url_unit
+     * @param array $url_unit
      *
      * @return array
      */
-    private function getHeader(array $url_unit) : array
+    private function buildRuntimeData(array $url_unit): array
     {
-        $header_list = ['Host' => $url_unit['host'] . ':' . $url_unit['port']];
-
-        if ( !empty($this->header) ) {
-            $header_list += $this->header;
+        //Merge upload file data, set content-type to multipart/form-data
+        if (isset($this->runtime_data['file'])) {
+            $this->runtime_data['data']              ??= [];
+            $this->runtime_data['data']              += $this->runtime_data['file'];
+            $this->runtime_data['http_content_type'] = self::CONTENT_TYPE_FORM_DATA;
         }
 
-        if ( '' !== $this->cookie ) {
-            $header_list['Cookie'] = $this->cookie;
+        //Merge default
+        $this->runtime_data += self::CURL_DEFAULT;
+
+        //Merge URL data
+        $this->runtime_data['url_unit'] = &$url_unit;
+
+        //Uppercase HTTP method
+        $this->runtime_data['http_method'] = strtoupper($this->runtime_data['http_method']);
+
+        //Merge with header data
+        $runtime_data = $this->mergeHttpHeader($url_unit, $this->runtime_data);
+
+        //Reset runtime data property
+        $this->runtime_data = [];
+
+        unset($url_unit);
+        return $runtime_data;
+    }
+
+    /**
+     * Build cURL options
+     *
+     * @param array $runtime_data
+     * @param bool  $with_header
+     *
+     * @return array
+     */
+    private function buildCurlOptions(array $runtime_data, bool $with_header = true): array
+    {
+        $curl_opt = $this->runtime_data['options'] ?? [];
+
+        if (isset($runtime_data['cookie'])) {
+            $curl_opt[CURLOPT_COOKIE] = &$runtime_data['cookie'];
         }
 
-        if ( '' !== $this->etag ) {
-            $header_list['If-None-Match'] = $this->etag;
+        if (isset($runtime_data['referer'])) {
+            $curl_opt[CURLOPT_REFERER] = &$runtime_data['referer'];
         }
 
-        if ( '' !== $this->modified ) {
-            $header_list['If-Modified-Since'] = $this->modified;
+        if (isset($runtime_data['max_follow']) && 0 < $runtime_data['max_follow']) {
+            $curl_opt[CURLOPT_FOLLOWLOCATION] = true;
+            $curl_opt[CURLOPT_MAXREDIRS]      = &$runtime_data['max_follow'];
         }
 
-        $header_list += [
-            'User-Agent' => $this->user_agent,
-            //            'Accept'          => $this->accept_type,
-            //            'Accept-Charset'  => $this->accept_charset,
-            //            'Accept-Encoding' => $this->accept_encoding,
-            //            'Accept-Language' => $this->accept_language,
-            //            'Content-Type'    => $this->content_type,
-            //            'Connection'      => $this->connection
+        if (isset($runtime_data['proxy'])) {
+            $curl_opt[CURLOPT_PROXY] = &$runtime_data['proxy'];
+
+            if (isset($runtime_data['proxy_passwd'])) {
+                $curl_opt[CURLOPT_PROXYUSERPWD] = &$runtime_data['proxy_passwd'];
+            }
+        }
+
+        if (isset($runtime_data['data'])) {
+            if ('GET' === $runtime_data['http_method']) {
+                $runtime_data['http_method'] = 'POST';
+            }
+
+            if (false !== stripos($runtime_data['http_content_type'], 'urlencoded')) {
+                $curl_opt[CURLOPT_POSTFIELDS] = http_build_query($runtime_data['data']);
+            } elseif (false !== stripos($runtime_data['http_content_type'], 'json')) {
+                $curl_opt[CURLOPT_POSTFIELDS] = json_encode($runtime_data['data'], JSON_FORMAT);
+            } elseif (false !== stripos($runtime_data['http_content_type'], 'xml')) {
+                $curl_opt[CURLOPT_POSTFIELDS] = IOUnit::new()->toXml($runtime_data['data']);
+            } else {
+                $curl_opt[CURLOPT_POSTFIELDS] = &$runtime_data['data'];
+            }
+        }
+
+        $curl_opt[CURLOPT_NOSIGNAL]       = true;
+        $curl_opt[CURLOPT_AUTOREFERER]    = true;
+        if ($this->curlopt_cookiesession_status) {
+            $curl_opt[CURLOPT_COOKIESESSION]  = true;
+        }
+        $curl_opt[CURLOPT_RETURNTRANSFER] = true;
+
+        $curl_opt[CURLOPT_NOBODY] = !$runtime_data['with_body'];
+
+        //Using standard port number when no specific port is assigned in URL
+        $curl_opt[CURLOPT_PORT] = $runtime_data['url_unit']['port'] ?? ('https' === $runtime_data['url_unit']['scheme'] ? 443 : 80);
+
+        $curl_opt[CURLOPT_HEADER]         = &$with_header;
+        $curl_opt[CURLOPT_TIMEOUT]        = &$runtime_data['timeout'];
+        $curl_opt[CURLOPT_ENCODING]       = &$runtime_data['accept_encoding'];
+        $curl_opt[CURLOPT_USERAGENT]      = &$runtime_data['user_agent'];
+        $curl_opt[CURLOPT_HTTPHEADER]     = &$runtime_data['header'];
+        $curl_opt[CURLOPT_CUSTOMREQUEST]  = &$runtime_data['http_method'];
+        $curl_opt[CURLOPT_SSL_VERIFYHOST] = &$runtime_data['ssl_verifyhost'];
+        $curl_opt[CURLOPT_SSL_VERIFYPEER] = &$runtime_data['ssl_verifypeer'];
+
+        unset($runtime_data, $with_header);
+        return $curl_opt;
+    }
+
+    /**
+     * Merge runtime data with HTTP header
+     *
+     * @param array $url_unit
+     * @param array $runtime_data
+     *
+     * @return array
+     */
+    private function mergeHttpHeader(array $url_unit, array $runtime_data): array
+    {
+        //Append port number when non-standard port is using
+        $header_unit = ['Host' => $url_unit['host'] . (isset($url_unit['port']) ? ':' . $url_unit['port'] : '')];
+
+        if (isset($runtime_data['header'])) {
+            $header_unit += $runtime_data['header'];
+        }
+
+        if (isset($runtime_data['cookie'])) {
+            $header_unit['Cookie'] = &$runtime_data['cookie'];
+        }
+
+        if (isset($runtime_data['etag'])) {
+            $header_unit['If-None-Match'] = &$runtime_data['etag'];
+        }
+
+        if (isset($runtime_data['last_modified'])) {
+            $header_unit['If-Modified-Since'] = &$runtime_data['last_modified'];
+        }
+
+        $header_unit += [
+            'Accept'          => &$runtime_data['accept_type'],
+            'Accept-Charset'  => &$runtime_data['accept_charset'],
+            'Accept-Encoding' => &$runtime_data['accept_encoding'],
+            'Accept-Language' => &$runtime_data['accept_language'],
+            'Content-Type'    => &$runtime_data['http_content_type'],
+            'User-Agent'      => &$runtime_data['user_agent'],
+            'Connection'      => &$runtime_data['http_connection']
         ];
 
-        $headers = [$this->method . ' ' . $url_unit['path'] . $url_unit['query'] . ' ' . $this->http_ver];
+        $runtime_data['header'] = [$runtime_data['http_method'] . ' ' . $url_unit['path'] . $url_unit['query'] . ' ' . $runtime_data['http_ver']];
 
-        foreach ($header_list as $key => $val) {
-            $headers[] = $key . ': ' . $val;
+        foreach ($header_unit as $key => $val) {
+            $runtime_data['header'][] = ($key . ': ' . $val);
         }
 
-        unset($url_unit, $header_list, $key, $val);
-        return $headers;
+        unset($url_unit, $header_unit, $key, $val);
+        return $runtime_data;
+    }
+
+    /**
+     * Parse HTTP response into parts
+     *
+     * @param string $response
+     */
+    private function parseHttpResponse(string $response): void
+    {
+        //Reset appendable variables
+        $this->raw_cookie  = '';
+        $this->http_header = [];
+        $this->http_cookie = [];
+
+        //Get raw data of header and body
+        [$this->raw_header, $this->http_body] = explode("\r\n\r\n", $response, 2);
+
+        //Parse Header
+        $data_list = explode("\r\n", $this->raw_header);
+
+        foreach ($data_list as $value) {
+            if (false === ($pos = strpos($value, ':'))) {
+                continue;
+            }
+
+            $key = strtolower(substr($value, 0, $pos));
+            $val = substr($value, $pos + 2);
+
+            $this->http_header[$key] = $val;
+
+            if ('set-cookie' === $key) {
+                if ('' !== $this->raw_cookie) {
+                    $this->raw_cookie .= '; ';
+                }
+
+                $this->raw_cookie .= rtrim($val, ';');
+            }
+        }
+
+        //Parse Cookie
+        $data_list = explode('; ', $this->raw_cookie);
+
+        foreach ($data_list as $value) {
+            if (false === ($pos = strpos($value, '='))) {
+                continue;
+            }
+
+            $key = substr($value, 0, $pos);
+            $val = substr($value, $pos + 1);
+
+            $this->http_cookie[$key] = $val;
+        }
+
+        unset($response, $data_list, $value, $pos, $key, $val);
     }
 }
