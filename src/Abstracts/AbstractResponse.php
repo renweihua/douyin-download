@@ -169,9 +169,10 @@ abstract class AbstractResponse extends Server implements InterfaceResponse, Int
                 $this->setAuthor($this->getFormatAuthor($aweme_author));
             }
             // var_dump(count($response['aweme_list']));
+            $result = [];
             foreach ($response['aweme_list'] as $item) {
                 if ($item){
-                    $this->setResult([
+                    $result[] = [
                         'sec_uid'         => $item['author']['sec_uid'],
                         'uid'             => $item['author']['uid'],
                         'aweme_id'        => $item['aweme_id'],
@@ -191,9 +192,10 @@ abstract class AbstractResponse extends Server implements InterfaceResponse, Int
                         'real_video_path' => '',
                         // 原视频数据
                         'original'        => $item,
-                    ]);
+                    ];
                 }
             }
+            $this->setResult($result);
 
             // 是否还有更多数据
             $this->setHasMore(empty($response['aweme_list']) ? false : ($response['has_more'] ?? false));
