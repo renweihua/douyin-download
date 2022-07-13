@@ -56,7 +56,7 @@ abstract class AbstractResponse extends Server implements InterfaceResponse, Int
 
     // 列表数据
     protected $list_data = [];
-    protected $$list_all_data = [];
+    protected $list_all_data = [];
 
     public function getResult() : array
     {
