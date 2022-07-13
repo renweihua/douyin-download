@@ -49,12 +49,23 @@ abstract class AbstractResponse extends Server implements InterfaceResponse, Int
         return count($this->getResult());
     }
 
+    public function getAllTotal() : int
+    {
+        return count($this->getAllResult());
+    }
+
     // 列表数据
     protected $list_data = [];
+    protected $$list_all_data = [];
 
     public function getResult() : array
     {
         return array_values(array_filter($this->list_data));
+    }
+
+    public function getAllResult() : array
+    {
+        return array_values(array_filter($this->list_all_data));
     }
 
     public function setResult(array $item) : void
@@ -64,15 +75,22 @@ abstract class AbstractResponse extends Server implements InterfaceResponse, Int
         if (!$this->getIsMerge()){
             $this->list_data = [];
         }
-        $this->list_data[] = $item;
+        $this->list_data = $item;
+        $this->list_all_data[] = $item;
     }
 
     // 原始数据
     protected $original_data = [];
+    protected $original_all_data = [];
 
     public function getOriginalData() : array
     {
         return array_values(array_filter($this->original_data));
+    }
+
+    public function getAllOriginalData() : array
+    {
+        return array_values(array_filter($this->original_all_data));
     }
 
     public function setOriginalData(array $item) : void
@@ -80,7 +98,8 @@ abstract class AbstractResponse extends Server implements InterfaceResponse, Int
         if (!$this->getIsMerge()){
             $this->original_data = [];
         }
-        $this->original_data[] = $item;
+        $this->original_data = $item;
+        $this->original_all_data[] = $item;
     }
 
     // 是否启用数据合并
