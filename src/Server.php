@@ -56,6 +56,18 @@ abstract class Server
     }
 
     /**
+     * 获取指定作品的URL
+     *
+     * @param $aweme_id
+     *
+     * @return string
+     */
+    public function getAwemeUrlById($aweme_id): string
+    {
+        return self::SERVER_URL . 'aweme/iteminfo/?item_ids='. $aweme_id;
+    }
+
+    /**
      * 通过URL获取会员的sec_uid
      *
      * @param  string  $url
