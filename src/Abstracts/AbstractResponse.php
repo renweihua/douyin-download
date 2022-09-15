@@ -151,7 +151,11 @@ abstract class AbstractResponse extends Server implements InterfaceResponse, Int
             'nick_name'       => $aweme_author['nickname'],
             // 签名
             'signature'       => $aweme_author['signature'],
-            'follower_count'  => $aweme_author['follower_count'],
+            // 作者的关注
+            'follow_count'      => $aweme_author['following_count'],
+            // 作者的粉丝数
+            'fan_count'  => $aweme_author['follower_count'],
+            // 作者的获赞数
             'total_favorited' => $aweme_author['total_favorited'],
             // 头像
             'avatar_thumb'    => current($aweme_author['avatar_thumb']['url_list']),
