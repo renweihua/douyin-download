@@ -62,9 +62,14 @@ trait TraitAuthor
         return $this->signature;
     }
 
-    public function getFollowerCount() : int
+    public function getFollowCount() : int
     {
         return $this->follower_count;
+    }
+
+    public function getFanCount() : int
+    {
+        return $this->fan_count;
     }
 
     public function getTotalFavorited() : int

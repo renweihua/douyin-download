@@ -18,7 +18,9 @@ interface InterfaceAuthor
 
     public function getOriginalAuthor() : array;
 
-    public function getFollowerCount() : int;
+    public function getFollowCount() : int;
+
+    public function getFanCount() : int;
 
     public function getTotalFavorited() : int;
 }
