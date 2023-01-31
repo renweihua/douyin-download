@@ -12,9 +12,11 @@ class Video extends AbstractResponse
     {
         $url = $this->getUserUrlBySecUid($sec_uid);
         // 请求视频接口获取数据
-        $http = $this->http;
+        $http = $this->getHttp();
+        // 设置referer
+        $http = $http->addHeader(['referer' => $url]);
         // 检测是否设置了cookie
-        if (!isset($http->getHttpHeader()['cookie']) && !$cookie){
+        if (!isset($http->getRuntimeData('header')['cookie']) && !$cookie){
             throw new \Exception('请设置抖音客户端Cookie');
         }
         // 主动设置cookie

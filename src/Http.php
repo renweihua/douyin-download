@@ -503,6 +503,14 @@ class Http
         return $this->http_cookie;
     }
 
+    public function getRuntimeData($key = ''): array
+    {
+        if ($key){
+            return $this->runtime_data[$key] ?? [];
+        }
+        return $this->runtime_data;
+    }
+
     /**
      * Parse HTTP Cookie string
      *
