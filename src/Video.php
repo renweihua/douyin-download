@@ -44,7 +44,7 @@ class Video extends AbstractResponse
      * @return array
      * @throws \Exception
      */
-    public function getVideosBySecUid(string $sec_uid, int $max_cursor = 0) : array
+    public function getVideosBySecUid(string $sec_uid, int $max_cursor = 0, string $cookie = '') : array
     {
         // 作者标识变更时，数据重置清空
         if ( $this->sec_uid != $sec_uid ) {
@@ -59,7 +59,22 @@ class Video extends AbstractResponse
         $url = $this->getVideosUrlBySecUid($sec_uid, $max_cursor);
         $this->sec_uid = $sec_uid;
         // 请求视频接口获取数据
-        $response = json_decode($this->http->setHttpMethod('GET')->setMaxFollow(1)->fetch($url), true);
+        $http = $this->getHttp();
+        // 设置referer
+        $http = $http->addHeader(['referer' => $url]);
+        // 检测是否设置了cookie
+        if (!isset($http->getRuntimeData('header')['cookie']) && !$cookie){
+            throw new \Exception('请设置抖音客户端Cookie');
+        }
+        // 主动设置cookie
+        if ($cookie){
+            $http = $http->addHeader(['cookie' => $cookie]);
+        }
+        $result = $this->http->setHttpMethod('GET')->setMaxFollow(1)->fetch($url);
+        if (!$result) {
+            return $this->setResponse();
+        }
+        $response = json_decode($result, true);
         if ( !$response ) {
             return $this->setResponse();
         }
