@@ -8,21 +8,29 @@ use Cnpscy\DouyinDownload\Abstracts\AbstractResponse;
 
 class Video extends AbstractResponse
 {
-    public function getUserInfoBySecUid(string $cookie, string $sec_uid) : array
+    public function getUserInfoBySecUid(string $sec_uid, string $cookie = '') : array
     {
         $url = $this->getUserUrlBySecUid($sec_uid);
         // 请求视频接口获取数据
         $http = $this->http;
-        $http = $http->addHeader(['cookie' => $cookie]);
+        // 检测是否设置了cookie
+        if (!isset($http->getHttpHeader()['cookie']) && !$cookie){
+            throw new \Exception('请设置抖音客户端Cookie');
+        }
+        // 主动设置cookie
+        if ($cookie){
+            $http = $http->addHeader(['cookie' => $cookie]);
+        }
+        // 请求视频接口获取数据
         $result = $http->setHttpMethod('GET')->setMaxFollow(1)->fetch($url);
         if (!$result){
             throw new \Exception('作者信息获取失败`' . $url . '`');
         }
-        $response = json_decode($result, true);
+        $response = json_decode($result, true)['user_info'] ?? [];
         if ( !$response ) {
             return $this->setAuthor();
         }
-        return $this->setAuthor($this->getFormatAuthor(array_merge($response['user_info'], ['sec_uid' => $sec_uid])));
+        return $this->setAuthor($this->getFormatAuthor(array_merge($response, ['sec_uid' => $sec_uid])));
     }
 
     /**
