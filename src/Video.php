@@ -8,15 +8,21 @@ use Cnpscy\DouyinDownload\Abstracts\AbstractResponse;
 
 class Video extends AbstractResponse
 {
-    public function getUserInfoBySecUid(string $sec_uid) : array
+    public function getUserInfoBySecUid(string $cookie, string $sec_uid) : array
     {
         $url = $this->getUserUrlBySecUid($sec_uid);
         // 请求视频接口获取数据
-        $response = json_decode($this->http->setHttpMethod('GET')->setMaxFollow(1)->fetch($url), true)['user_info'] ?? [];
+        $http = $this->http;
+        $http = $http->addHeader(['cookie' => $cookie]);
+        $result = $http->setHttpMethod('GET')->setMaxFollow(1)->fetch($url);
+        if (!$result){
+            throw new \Exception('作者信息获取失败`' . $url . '`');
+        }
+        $response = json_decode($result, true);
         if ( !$response ) {
             return $this->setAuthor();
         }
-        return $this->setAuthor($this->getFormatAuthor(array_merge($response, ['sec_uid' => $sec_uid])));
+        return $this->setAuthor($this->getFormatAuthor(array_merge($response['user_info'], ['sec_uid' => $sec_uid])));
     }
 
     /**
