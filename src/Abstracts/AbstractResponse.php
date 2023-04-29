@@ -154,7 +154,7 @@ abstract class AbstractResponse extends Server implements InterfaceResponse, Int
             // 作者的关注
             'follow_count'      => $aweme_author['following_count'],
             // 作者的粉丝数
-            'fan_count'  => $aweme_author['follower_count'],
+            'fan_count'  => $aweme_author['follower_count'] ?? $aweme_author['mplatform_followers_count'],
             // 作者的获赞数
             'total_favorited' => $aweme_author['total_favorited'],
             // 头像
